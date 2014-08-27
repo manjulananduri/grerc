@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+	<link REL="SHORTCUT ICON" HREF="favicon.ico">
+	<title>GRERC Practice Utility</title>
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<script src="js/data.js" type="text/javascript" charset="utf-8"></script>
+<script language="javascript">
+var totalq=0;
+var curq=0;
+var curans=0;
+var pid=0;
+var rs=0;			//0 means random, 1 means next and 2 means prev
+var count_sec=0;
+var count_min=0;
+var timer;
+ function randomIntFromInterval(min,max) {
+        return Math.floor(Math.random()*(max-min+1)+min);
+    }
+function startCount()
+{
+  document.getElementById('rid').innerHTML="<span class='glyphicon glyphicon-time'></span> Time elapsed = "+count_min+" mins , "+count_sec+" Secs";
+  count_sec=count_sec+1;
+  if(count_sec>=60)
+  {
+	count_sec=0;
+	count_min=count_min+1;
+  }
+  timer=window.setTimeout("startCount()",1000);
+}
+
+function stopCount()
+{
+  count_sec=0;
+  count_min=0;
+  clearTimeout(timer);
+}
+function nextq()
+{
+	
+	if(curq<data[pid][1].length-1)
+	{
+		curq=curq+1;
+		show_question();
+	}
+	else
+	{
+		show_psg(rs);
+	}
+
+}
+
+function show_psg(rs) //0 means random, 1 means next and 2 means prev
+{
+	if(rs==0)
+		pid=randomIntFromInterval(0,data.length-1);
+	else if(rs==1)
+	{
+		if(pid==data.length-1)
+			pid=0;
+		else
+			pid=pid+1;
+	}
+	else if(rs==2)
+	{
+		if(pid==0)
+			pid=data.length-1;
+		else
+			pid=pid-1;
+	}	
+	document.getElementById("pid_val").value=(pid+1);
+	document.getElementById("passage").innerHTML=data[pid][0];
+	totalq=data[pid][1].length;
+	curq=0;
+	stopCount();
+	startCount();
+	reset_img();
+	show_question();
+}
+function show_question()	//curq already set
+{
+	var question_string=data[pid][1][curq][0]+"<br><br>";
+	curans=randomIntFromInterval(1,(data[pid][1][curq].length-1));
+	var onum=1;
+	for(var i=1;i<data[pid][1][curq].length;i++)
+	{
+		if(i!=curans)
+		{
+			onum++;
+			question_string=question_string+"<div class='radio'><label for='option"+i+"'><input id='option"+i+"' class='radio' type='radio' name='useranswer' value='"+i+"'>"+data[pid][1][curq][onum]+"</label></div><br>";
+		}
+		else
+			question_string=question_string+"<div class='radio'><label for='option"+i+"'><input id='option"+i+"' class='radio' type='radio' name='useranswer' value='"+i+"'>"+data[pid][1][curq][1]+"</label></div><br>";
+	}
+	document.getElementById("questions").innerHTML=question_string;
+	document.getElementById("infoid").innerHTML="";
+	document.getElementById("infoid").className="";
+	disable_nxt();
+}
+
+
+function hilight(right,wrong)
+{
+            var arrayOflabel = document.getElementsByTagName("label");
+            var o=0
+            for (var j=0;j<arrayOflabel.length;j++)
+            {
+            	if(arrayOflabel[j].htmlFor!="")
+            	{
+            		var opnum=parseInt(arrayOflabel[j].htmlFor.substring(6));
+            		if(opnum==right)
+						arrayOflabel[j].style.background='#66ff66';
+					else
+						arrayOflabel[j].style.background='#FFFFFF';
+
+            		if(wrong!=-1)
+            		{
+						if(opnum==wrong)
+						 if(o==0)
+						 {
+							arrayOflabel[j].style.background='#ff6666';
+							o=1;
+						 }
+					}
+				}
+
+		    }
+
+}
+
+function handleEnter(inField, e) {
+    var charCode;
+
+    if(e && e.which){
+        charCode = e.which;
+    }else if(window.event){
+        e = window.event;
+        charCode = e.keyCode;
+    }
+
+    if(charCode == 13)
+    {
+        document.getElementById('infoid').innerHTML="";
+		pid=parseInt(document.getElementById('pid_val').value) -1;
+		document.getElementById("passage").innerHTML=data[pid][0];
+		totalq=data[pid][1].length;
+		rs=1;
+		curq=0;
+		stopCount();
+		startCount();
+    }
+}
+
+function disable_options()
+{
+	document.getElementById('option1').disabled=true;
+	document.getElementById('option2').disabled=true;
+	document.getElementById('option3').disabled=true;
+	document.getElementById('option4').disabled=true;
+	document.getElementById('option5').disabled=true;
+}
+
+function reset_img()
+{
+	var i=0;
+	for (i=1;i<=12;i++)
+		document.getElementById('i'+i).innerHTML="";
+	for (i=1;i<=totalq;i++)
+		document.getElementById('i'+i).innerHTML="<img src='./img/na.png'>";
+}
+
+function set_right()
+{
+	document.getElementById('i'+(curq+1)).innerHTML="<img src='./img/right.png'>";
+}
+
+function set_wrong()
+{
+	document.getElementById('i'+(curq+1)).innerHTML="<img src='./img/wrong.png'>";
+}
+
+function valbutton()
+{
+	var user_ans;
+	var msg="Incorrect. A";
+	try
+	{
+		user_ans=document.querySelector('input[name="useranswer"]:checked').value;
+	}
+	catch(err)
+	{
+		console.log(err.message);
+		msg="Correct a";
+	}
+	disable_options();	
+		if(curans==user_ans)
+		{
+			set_right();
+			hilight(curans,-1);
+			document.getElementById("infoid").innerHTML="<font color='#009900'><span class='glyphicon glyphicon-ok'></span> Correct</font>";
+			document.getElementById("infoid").className = "success";
+		}
+		else
+		{
+			set_wrong();
+			hilight(curans,user_ans);
+			var map=["A","B","C","D","E"];
+			document.getElementById("infoid").innerHTML="<font color='#cc3300'><span class='glyphicon glyphicon-remove' color='#cc3300'></span>  "+msg+"nswer is ("+map[curans-1]+")</font>";
+			document.getElementById("infoid").className = "danger";
+		}
+	enable_nxt();
+}
+function enable_nxt()
+{
+	document.getElementById('nxt').disabled=false;
+	document.getElementById('nxt').className = "btn btn-primary";
+}
+
+function disable_nxt()
+{
+	document.getElementById('nxt').disabled=true;
+	document.getElementById('nxt').className = "btn btn-default";
+}
+
+
+
+</script>
+
+<!--style type="text/css" media="screen">
+input.btn, select.btn {
+background-color:#5f5e5c;
+background-image:url(./img/btn.gif);
+border-color:#666666 #000000 #000000 #000000;
+border-style:solid;
+border-width:1px;
+color:#1f1f65;
+font-family:'trebuchet ms',helvetica,sans-serif;
+font-size:90%;
+font-weight:bold;
+padding-left:5px;
+padding-right:5px;
+}
+input.btn:hover, select.btn:hover {
+background-color:#5f5e5c;
+background-image:url(./img/btn_hover.gif);
+border-color:#666666 #000000 #000000 #000000;
+border-style:solid;
+border-width:1px;
+color:#1f1f65;
+font-family:'trebuchet ms',helvetica,sans-serif;
+font-size:90%;
+font-weight:bold;
+padding-left:5px;
+padding-right:5px;
+}
+</style-->
+
+</head>
+<body onload="show_psg(0)">
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
+  <div class="container">
+   <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-8">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="../index.html">Home</a></li>
+            <li><a href="../old">Old RC</a></li>
+            <li><a href="./pages/grematerials.html">Gre Materials</a></li>
+            <li><a href="./pages/others.html">Others</a></li>
+          </ul>
+        </div>
+  </div>
+</nav>
+<div class="container">
+<h3 align="middle">GRE Reading Comprehension - Practice Utility</h3>
+<table class="table" border="1" width="800px" height="500px" align="center" style="margin-top:30px; border-color:#ffffff;">
+<tr><td colspan=2 width="50%" height="50px">
+<span style="float:left;" id="pno">
+<div class="col-xs-3">
+<input class="btn btn-default" type="button" onclick="javascript:show_psg(2)" value="Previous">
+</div>
+<div class="col-xs-2">
+<label>Passage</label>
+</div>
+<div class="col-xs-3">
+<input type="text" class="form-control"id="pid_val" class="" type="text" onkeypress="handleEnter(this, event)" value="">
+</div>
+<div class="col-xs-3">
+<input class="btn btn-default" type="button" onclick="javascript:show_psg(1)" value="Next">
+</div>
+</span><span style="float:right;font-weight: bold;" id='rid'></span>
+</td></tr>
+<tr><td rowspan=3 width="50%" height="100%"><div style='height:500px;overflow:auto'><div id="passage" style="overflow:visible;color:black;font-size:15px;background-image:url('./img/lines.gif');background-repeat:no-repeat;padding-left:35px;padding-right:5px;text-align:justify;"></div></div>
+</td></tr>
+
+<tr><td width="50%" height='475px'>
+<form id='qform'>
+<div name='form1' id="questions" style="height:475px;overflow:auto;color:black;font-size:14px;padding-left: 5px;padding-right: 5px;text-align: justify;"></div>
+</form>
+</td></tr>
+<tr><td id="infoid" style="text-align:center;font-size:15px;" align='center'></td></tr>
+<tr>
+<td align="left" valign="middle">
+<span id='i1'></span>
+<span id='i2'></span>
+<span id='i3'></span>
+<span id='i4'></span>
+<span id='i5'></span>
+<span id='i6'></span>
+<span id='i7'></span>
+<span id='i8'></span>
+<span id='i9'></span>
+<span id='i10'></span>
+<span id='i11'></span>
+<span id='i12'></span>
+</td>
+<td id="buttonid" align="right">
+<input class="btn btn-danger" type="button" onclick="nextq();" value="Skip">
+<input class="btn btn-success" type="button" onclick="valbutton();" value="Submit">
+<input id="nxt" class="btn btn-default" type="button" onclick="nextq();" value="Next" disabled="disabled">
+</td></tr>
+</table>
+
+<br>
+<center><b>The line numbers in the questions may not refer correctly to the right line in the passage.</b><br></center><br>
+<div style="color:black;font-family:Tahoma;font-size:13px;text-align:center;" align="center">If you would like to reuse this code or contribute contents to this site, please reach out to <a href="mailto:admin@grerc.cu.cc">Prashanth Subbiah</a> / <a href="mailto:ntweat@ntweat.com">Saurabh Hinduja</a>.<br></div>
+<br> <div width="75%" style="color:black;font-family:Tahoma;font-size:11px;text-align:center;" align="center">Copyright &copy; 2014 GRERC. All rights reserved.
+<br><a href="http://www.grerc.cu.cc" style="color:black;font-family:Tahoma;font-size:11px;color:#0582ff;text-decoration:none;">www.grerc.cu.cc</a></div>
+</div>
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="js/bootstrap.min.js"></script>
+</body>
+</html>
